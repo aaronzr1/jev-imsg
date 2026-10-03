@@ -215,7 +215,7 @@ def segment(messages, units, vectors, args):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--input-dir', type=Path, default=Path('raw'), help='Export directory (default: raw)')
-    ap.add_argument('--output-dir', type=Path, default=Path('segments'))
+    ap.add_argument('--output-dir', type=Path, default=Path('chunk_data'))
     ap.add_argument('--similarity', type=float, default=0.35)
     ap.add_argument('--resume-similarity', type=float, default=0.65)
     ap.add_argument('--long-gap-similarity', type=float, default=0.20)

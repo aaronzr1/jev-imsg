@@ -1,7 +1,7 @@
 .venv/
 .cache/
 __pycache__/
-segments/*.json
+segments/chunk_data/*.json
 *.txt
 !requirements.txt
 .Codex.json
