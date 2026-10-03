@@ -1,0 +1,8 @@
+.venv/
+.cache/
+__pycache__/
+segments/*.json
+*.txt
+!requirements.txt
+.Codex.json
+.env
