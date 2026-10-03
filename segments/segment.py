@@ -8,6 +8,8 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+
 os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
 os.environ.setdefault('OMP_NUM_THREADS', '2')
 HEADER = re.compile(r'^( *)([A-Z][a-z]{2} \d{2}, \d{4}\s+\d{1,2}:\d{2}:\d{2} [AP]M)(.*)$')
@@ -214,8 +216,9 @@ def segment(messages, units, vectors, args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--input-dir', type=Path, default=Path('raw'), help='Export directory (default: raw)')
-    ap.add_argument('--output-dir', type=Path, default=Path('chunk_data'))
+    ap.add_argument('--input-dir', type=Path, default=ROOT / 'raw', help='Default: repository raw/')
+    ap.add_argument('--output-dir', type=Path, default=ROOT / 'segments' / 'chunk_data',
+                    help='Default: repository segments/chunk_data/')
     ap.add_argument('--similarity', type=float, default=0.35)
     ap.add_argument('--resume-similarity', type=float, default=0.65)
     ap.add_argument('--long-gap-similarity', type=float, default=0.20)
@@ -234,7 +237,7 @@ def main():
     if not paths:
         ap.error('No input exports found')
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    cache = Path('.cache')
+    cache = ROOT / '.cache'
     cache.mkdir(exist_ok=True)
     model = None
     overview, review = [], []

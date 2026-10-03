@@ -3,7 +3,10 @@ import math
 import re
 from collections import Counter, defaultdict
 
-from chunk_search import chunk_text, load_chunks, result, validate_query
+if __package__:
+    from .chunk_search import DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
+else:
+    from chunk_search import DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
 
 
 def tokenize(text):
@@ -14,7 +17,7 @@ def tokenize(text):
 class SparseSearch:
     """Load once, then call search repeatedly. Rebuild to pick up changed files."""
 
-    def __init__(self, chunks_dir='segments'):
+    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR):
         self.records = load_chunks(chunks_dir)
         self.postings = defaultdict(list)
         self.lengths = []
@@ -42,7 +45,7 @@ class SparseSearch:
         return [result(self.records[index], scores[index]) for index in ranked]
 
 
-def search(query, chunks_dir='segments', top_k=10):
+def search(query, chunks_dir=DEFAULT_CHUNKS_DIR, top_k=10):
     """One-shot keyword endpoint; use SparseSearch for repeated queries."""
     validate_query(query, top_k)
     return SparseSearch(chunks_dir).search(query, top_k)

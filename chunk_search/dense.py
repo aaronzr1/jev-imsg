@@ -10,7 +10,10 @@ os.environ.setdefault('OMP_NUM_THREADS', '2')
 
 import numpy as np
 
-from chunk_search import chunk_text, load_chunks, result, validate_query
+if __package__:
+    from .chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
+else:
+    from chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
 
 MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 
@@ -32,7 +35,7 @@ def normalize(vectors):
 class DenseSearch:
     """Snapshot of chunks with cached embeddings and lazy model loading."""
 
-    def __init__(self, chunks_dir='segments', cache_dir='.cache'):
+    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, cache_dir=DEFAULT_CACHE_DIR):
         self.records = load_chunks(chunks_dir)
         self.cache_dir = Path(cache_dir)
         self.model = None
@@ -83,7 +86,7 @@ class DenseSearch:
         return [result(self.records[index], scores[index]) for index in ranked]
 
 
-def search(query, chunks_dir='segments', top_k=10, cache_dir='.cache'):
+def search(query, chunks_dir=DEFAULT_CHUNKS_DIR, top_k=10, cache_dir=DEFAULT_CACHE_DIR):
     """One-shot semantic endpoint; use DenseSearch for repeated queries."""
     validate_query(query, top_k)
     if not query.strip():

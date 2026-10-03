@@ -1,6 +1,6 @@
 # Conversation segmentation
 
-`segment.py` implements the approved segmentation stage of the pipeline. Full results are in one `output/*.chunks.json` per input export; `output/index.json` lists counts. Each run also writes `output/review-sample.json`, a diagnostic sample of consecutive opening chunks and selected boundary examples with readable transcripts and optional review fields. It is not a random quality estimate.
+`segments/segment.py` implements the approved segmentation stage of the pipeline. Full results are in one `segments/chunk_data/*.chunks.json` per input export; `segments/chunk_data/index.json` lists counts. Each run also writes `segments/chunk_data/review-sample.json`, a diagnostic sample of consecutive opening chunks and selected boundary examples with readable transcripts and optional review fields. It is not a random quality estimate.
 
 ## How boundaries work
 
@@ -89,14 +89,14 @@ Moving an unchanged export into `raw/` does not invalidate its hash, line refere
 
 ### Convert full chunks to readable review format
 
-`chunks_to_review.py` uses only Python's standard library and does not re-run segmentation. For example:
+`segments/chunk_to_human_readable.py` uses only Python's standard library and does not re-run segmentation. For example:
 
 ```sh
-.venv/bin/python chunks_to_review.py 'output/+16467502166.chunks.json'
-.venv/bin/python chunks_to_review.py 'output/+16467502166.chunks.json' --limit 20 -o output/first-20.review.json
+.venv/bin/python segments/chunk_to_human_readable.py 'segments/chunk_data/+16467502166.chunks.json'
+.venv/bin/python segments/chunk_to_human_readable.py 'segments/chunk_data/+16467502166.chunks.json' --limit 20 -o segments/chunk_data/first-20.review.json
 ```
 
-The first command writes `output/+16467502166.review.json` with **all** chunks in chronological order. The second includes only the first 20. Both use the same `instructions` / `chunks` structure and per-chunk fields as `review-sample.json`, including blank `assessment` and `reviewer_notes`. They do not reproduce the segmenter's diagnostic sampling selection. Skipped conversations produce an empty review array. Existing files are never overwritten, preserving prior reviewer notes. Keep the full chunks JSON for detailed citations; review format deliberately omits structured messages.
+The first command writes `segments/chunk_data/+16467502166.review.json` with **all** chunks in chronological order. The second includes only the first 20. Both use the same `instructions` / `chunks` structure and per-chunk fields as `review-sample.json`, including blank `assessment` and `reviewer_notes`. They do not reproduce the segmenter's diagnostic sampling selection. Skipped conversations produce an empty review array. Existing files are never overwritten, preserving prior reviewer notes. Keep the full chunks JSON for detailed citations; review format deliberately omits structured messages.
 
 Each full file includes its source filename, SHA-256, parse counts, eligibility, statistics, and `chunks`. Eligible files also include model/settings metadata under `method`; skipped files instead retain their messages at the document's top level.
 
@@ -110,20 +110,22 @@ Replies to old messages retain `reply_to` even when unrelated chunks intervene. 
 
 ## Run / tune
 
+Run the commands below from the repository root. Default input, output, and cache paths are anchored to that root even when running a script from another directory. Explicit relative arguments resolve against your working directory.
+
 Dependencies live in `.venv`; cached models/embeddings live in `.cache`. No text is sent to an external embedding service. Network is needed only for installation and the initial model download.
 
 ```sh
 uv venv .venv
 uv pip install --python .venv/bin/python -r requirements.txt
-.venv/bin/python segment.py
+.venv/bin/python segments/segment.py
 ```
 
 Cached reruns can be forced offline:
 
 ```sh
-HF_HUB_OFFLINE=1 .venv/bin/python segment.py --similarity 0.50 --topic-gap 3 --output-dir output-finer
+HF_HUB_OFFLINE=1 .venv/bin/python segments/segment.py --similarity 0.50 --topic-gap 3 --output-dir output-finer
 ```
 
-Place source exports in `raw/`. Use `--input-dir` and `--output-dir` to select directories (defaults: `raw` and `output`). Input discovery reads `*.txt` files directly inside the input directory, excluding `requirements.txt`; it does not recurse into subdirectories. Tune thresholds with `--similarity`, `--resume-similarity`, and `--long-gap-similarity`; tune pauses in minutes with `--topic-gap`, `--idle-gap`, and `--hard-gap`; tune chunk size with `--max-messages` (minimum eight). Because long pauses use a separate, weaker threshold, changing pause thresholds does not always change the number of splits monotonically.
+Place source exports in `raw/`. Use `--input-dir` and `--output-dir` to select directories (defaults: repository `raw/` and `segments/chunk_data/`). Input discovery reads `*.txt` files directly inside the input directory, excluding `requirements.txt`; it does not recurse into subdirectories. Tune thresholds with `--similarity`, `--resume-similarity`, and `--long-gap-similarity`; tune pauses in minutes with `--topic-gap`, `--idle-gap`, and `--hard-gap`; tune chunk size with `--max-messages` (minimum eight). Because long pauses use a separate, weaker threshold, changing pause thresholds does not always change the number of splits monotonically.
 
 Cached embeddings make threshold experiments fast. Output is indented UTF-8 JSON with the original Unicode characters. The `.gitignore` excludes private exports, output, model caches, and the environment. The pipeline retains inline assertions that check message coverage and uniqueness when forming chunks.

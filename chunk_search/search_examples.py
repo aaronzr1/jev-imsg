@@ -5,7 +5,10 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+if __package__:
+    from .chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR
+else:
+    from chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR
 DEFAULT_QUERIES = {
     'sparse': ['dinner', 'flight', 'internship'],
     'dense': [
@@ -29,8 +32,8 @@ def main():
     parser.add_argument('--method', choices=['both', 'dense', 'sparse'], default='both')
     parser.add_argument('-q', '--query', action='append', help='Custom query; repeat for multiple queries')
     parser.add_argument('-k', '--top-k', type=positive_int, default=2)
-    parser.add_argument('--chunks-dir', type=Path, default=ROOT / 'segments')
-    parser.add_argument('--cache-dir', type=Path, default=ROOT / '.cache')
+    parser.add_argument('--chunks-dir', type=Path, default=DEFAULT_CHUNKS_DIR)
+    parser.add_argument('--cache-dir', type=Path, default=DEFAULT_CACHE_DIR)
     parser.add_argument('--excerpt-chars', type=positive_int, default=600)
     parser.add_argument('--full', action='store_true', help='Print complete chunk transcripts')
     parser.add_argument('--json-out', type=Path, help='Save full results as JSON (new file only)')
@@ -46,10 +49,16 @@ def main():
         print(f'\nLoading {method} index...', flush=True)
         started = time.perf_counter()
         if method == 'sparse':
-            from sparse import SparseSearch
+            if __package__:
+                from .sparse import SparseSearch
+            else:
+                from sparse import SparseSearch
             index = SparseSearch(args.chunks_dir)
         else:
-            from dense import DenseSearch
+            if __package__:
+                from .dense import DenseSearch
+            else:
+                from dense import DenseSearch
             print('The first embedding build can take several minutes; later runs reuse the cache.', flush=True)
             index = DenseSearch(args.chunks_dir, args.cache_dir)
         print(f'Loaded {len(index.records):,} chunks in {time.perf_counter() - started:.2f}s.', flush=True)

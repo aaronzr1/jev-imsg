@@ -1,8 +1,10 @@
 # Chunk search
 
-Both endpoints read schema-v1 `*.chunks.json` directly from a directory (no recursion). The default is `segments/`, matching the current files and `segment.py`; pass `chunks_dir='output'` for that location. Ineligible conversations are skipped. Raw exports are never changed.
+Both endpoints read schema-v1 `*.chunks.json` directly from a directory (no recursion). The default is the repository's `segments/chunk_data/`, matching `segments/segment.py`. Defaults for data and `.cache/` are anchored to the repository regardless of the working directory; explicitly supplied relative paths resolve against the working directory. Ineligible conversations are skipped. Raw exports are never changed.
 
 ## Usage
+
+Run these examples from the repository root.
 
 The existing `fastembed==0.7.4` requirement supplies the dense model runtime and NumPy. Keyword search uses only the standard library.
 
@@ -12,15 +14,14 @@ uv pip install --python .venv/bin/python -r requirements.txt
 ```
 
 ```python
-import dense
-import sparse
+from chunk_search import dense, sparse
 
 semantic_hits = dense.search('making plans to eat together', top_k=5)
 keyword_hits = sparse.search('pizza dinner', top_k=5)
 
 # For an application, build once and reuse across requests:
-semantic = dense.DenseSearch(chunks_dir='segments')
-keywords = sparse.SparseSearch(chunks_dir='segments')
+semantic = dense.DenseSearch()
+keywords = sparse.SparseSearch()
 semantic_hits = semantic.search('travel arrangements', top_k=5)
 keyword_hits = keywords.search('train tickets', top_k=5)
 ```
@@ -29,20 +30,20 @@ Each function returns a JSON-serializable list ordered by descending `score`, wi
 
 ## Try queries from the terminal
 
-`search_examples.py` runs the sample queries used during exploration, loading each index once. It prints scores, source files, chunk IDs, dates, query timings, and transcript excerpts. Default paths resolve relative to the script.
+`search_examples.py` runs the sample queries used during exploration, loading each index once. It prints scores, source files, chunk IDs, dates, query timings, and transcript excerpts. Default paths resolve from the repository root. Run the commands below from that root; `python -m chunk_search.search_examples` also works there. You can run the script by absolute path from another working directory.
 
 ```sh
 # Default keyword and semantic queries, two results each:
-.venv/bin/python search_examples.py
+.venv/bin/python chunk_search/search_examples.py
 
 # Compare both methods on the same custom query:
-.venv/bin/python search_examples.py -q "making plans to eat together"
+.venv/bin/python chunk_search/search_examples.py -q "making plans to eat together"
 
 # Multiple queries, one method, complete transcripts:
-.venv/bin/python search_examples.py --method sparse -q flight -q internship -k 3 --full
+.venv/bin/python chunk_search/search_examples.py --method sparse -q flight -q internship -k 3 --full
 
 # Save full results (including citation metadata) to a new JSON file:
-.venv/bin/python search_examples.py --json-out .cache/search-results.json
+.venv/bin/python chunk_search/search_examples.py --json-out .cache/search-results.json
 ```
 
 Use `--excerpt-chars` to change the default 600-character excerpt length. Excerpts show the beginning of a chunk, which may precede the matching passage; `--full` reveals all messages. Edit `DEFAULT_QUERIES` in the script to change the samples. Dense scores and BM25 scores use different scales. JSON exports contain conversation text; existing output files are never overwritten.
