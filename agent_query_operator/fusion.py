@@ -1,7 +1,7 @@
 """Reciprocal-rank fusion with one vote per chunk per distinct query list."""
 import math
 
-from ..retrieval.search import positive_int
+from .search import positive_int
 
 
 def fuse(runs, top_k=10, rrf_k=60):

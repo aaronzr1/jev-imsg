@@ -6,3 +6,6 @@ segments/chunk_data/*.json
 !requirements.txt
 .Codex.json
 .env
+*.egg-info/
+build/
+dist/

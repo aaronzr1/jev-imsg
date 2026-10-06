@@ -214,11 +214,12 @@ def segment(messages, units, vectors, args):
     return chunks
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--input-dir', type=Path, default=ROOT / 'raw', help='Default: repository raw/')
     ap.add_argument('--output-dir', type=Path, default=ROOT / 'segments' / 'chunk_data',
                     help='Default: repository segments/chunk_data/')
+    ap.add_argument('--cache-dir', type=Path, default=ROOT / '.cache')
     ap.add_argument('--similarity', type=float, default=0.35)
     ap.add_argument('--resume-similarity', type=float, default=0.65)
     ap.add_argument('--long-gap-similarity', type=float, default=0.20)
@@ -226,7 +227,7 @@ def main():
     ap.add_argument('--idle-gap', type=float, default=45)
     ap.add_argument('--hard-gap', type=float, default=240, help='Long-pause threshold in minutes; uses --long-gap-similarity')
     ap.add_argument('--max-messages', type=int, default=120)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     if not (0 <= args.similarity <= 1 and 0 <= args.resume_similarity <= 1 and
             0 <= args.long_gap_similarity <= 1 and
             0 <= args.topic_gap <= args.idle_gap <= args.hard_gap and args.max_messages >= 8):
@@ -237,8 +238,8 @@ def main():
     if not paths:
         ap.error('No input exports found')
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    cache = ROOT / '.cache'
-    cache.mkdir(exist_ok=True)
+    cache = args.cache_dir
+    cache.mkdir(parents=True, exist_ok=True)
     model = None
     overview, review = [], []
     settings = {k: v for k, v in vars(args).items() if not isinstance(v, Path)}

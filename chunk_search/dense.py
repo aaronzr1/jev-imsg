@@ -10,10 +10,7 @@ os.environ.setdefault('OMP_NUM_THREADS', '2')
 
 import numpy as np
 
-if __package__:
-    from .chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
-else:
-    from chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
+from .chunk_search import DEFAULT_CACHE_DIR, DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
 
 MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 
@@ -35,7 +32,7 @@ def normalize(vectors):
 class DenseSearch:
     """Snapshot of chunks with cached embeddings and lazy model loading."""
 
-    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, cache_dir=DEFAULT_CACHE_DIR):
+    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, cache_dir=DEFAULT_CACHE_DIR, use_cache=True):
         self.records = load_chunks(chunks_dir)
         self.cache_dir = Path(cache_dir)
         self.model = None
@@ -52,10 +49,12 @@ class DenseSearch:
                                        ensure_ascii=False).encode()).hexdigest()
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path = self.cache_dir / f'dense-{key}.npy'
-        if path.exists():
+        if use_cache and path.exists():
             self.vectors = np.load(path, allow_pickle=False)
         else:
             self.vectors = normalize(list(self._model().embed(texts, batch_size=32)))
+            if not use_cache:
+                return
             # Atomic replacement lets concurrent readers see only complete files.
             temporary = None
             try:

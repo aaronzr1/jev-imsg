@@ -3,10 +3,7 @@ import math
 import re
 from collections import Counter, defaultdict
 
-if __package__:
-    from .chunk_search import DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
-else:
-    from chunk_search import DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
+from .chunk_search import DEFAULT_CHUNKS_DIR, chunk_text, load_chunks, result, validate_query
 
 
 def tokenize(text):
