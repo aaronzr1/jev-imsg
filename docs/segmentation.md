@@ -4,8 +4,8 @@ Parse `raw/*.txt` exports into chronological conversation chunks using local
 MiniLM embeddings (two CPU threads). Raw exports remain untouched.
 
 ```sh
-.venv/bin/python -m segments.example
-.venv/bin/python segments/segment.py --help
+.venv/bin/python main.py --stage segment
+.venv/bin/python -m imsg.segments.segment --help
 ```
 
 ## Boundaries
@@ -50,12 +50,3 @@ stable for unchanged exports; chunk IDs can change with segmentation settings.
 Indented reply copies are resolved against timeline messages when unambiguous;
 identical top-level messages and unresolved copies are preserved. Source filenames,
 SHA-256 hashes, and line ranges retain provenance.
-
-To inspect every chunk without re-segmenting:
-
-```sh
-.venv/bin/python segments/chunk_to_human_readable.py segments/chunk_data/example.chunks.json
-```
-
-This creates a neighboring `.review.json`; `--limit` restricts the count and `-o`
-selects a new output path. Existing review files are never overwritten.

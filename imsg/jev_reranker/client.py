@@ -9,12 +9,13 @@ import certifi
 import time
 import urllib.error
 import urllib.request
-from pathlib import Path
+
+from imsg.config import ROOT
 
 from .core import probability
 
 ENDPOINT = 'https://api.typesafe.ai/v1/systemone'
-DEFAULT_ENV = Path(__file__).resolve().parents[1] / '.env'
+DEFAULT_ENV = ROOT / '.env'
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -50,7 +51,6 @@ class JevJudge:
         self._key = api_key
         self.model, self.timeout, self.retries = model, timeout, retries
         self._ssl_context = ssl.create_default_context(cafile=certifi.where())
-        self._opener = None  # Optional transport override for tests.
         self.settings = dict(provider='typesafe', model=model, timeout=timeout, retries=retries,
                              batch_size=batch_size, concurrency=concurrency, batch_budget_bytes=60000, pair_budget_bytes=28000)
 
@@ -64,7 +64,7 @@ class JevJudge:
         request = urllib.request.Request(ENDPOINT, json.dumps(body, ensure_ascii=False, allow_nan=False).encode('utf-8'),
             {'Authorization': 'Bearer ' + self._key, 'Content-Type': 'application/json'})
         # Each request owns its handlers; workers never share a mutable opener.
-        opener = self._opener or urllib.request.build_opener(
+        opener = urllib.request.build_opener(
             NoRedirect(), urllib.request.HTTPSHandler(context=self._ssl_context))
         for attempt in range(self.retries + 1):
             try:

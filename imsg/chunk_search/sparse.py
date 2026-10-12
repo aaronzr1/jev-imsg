@@ -41,9 +41,3 @@ class SparseSearch:
                 scores[index] += idf * frequency * 2.2 / (frequency + norm)
         ranked = sorted(scores, key=lambda index: (-scores[index], index))[:top_k]
         return [result(self.records[index], scores[index]) for index in ranked]
-
-
-def search(query, chunks_dir=DEFAULT_CHUNKS_DIR, top_k=10):
-    """One-shot keyword endpoint; use SparseSearch for repeated queries."""
-    validate_query(query, top_k)
-    return SparseSearch(chunks_dir).search(query, top_k)

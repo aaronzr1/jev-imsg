@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from imsg.config import ROOT
 DEFAULT_CHUNKS_DIR = ROOT / 'segments' / 'chunk_data'
 DEFAULT_CACHE_DIR = ROOT / '.cache'
 

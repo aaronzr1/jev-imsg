@@ -85,11 +85,3 @@ class DenseSearch:
         np.maximum.at(scores, self.owners, self.vectors @ vector)
         ranked = sorted(set(self.owners.tolist()), key=lambda index: (-float(scores[index]), index))[:top_k]
         return [result(self.records[index], scores[index]) for index in ranked]
-
-
-def search(query, chunks_dir=DEFAULT_CHUNKS_DIR, top_k=10, cache_dir=DEFAULT_CACHE_DIR):
-    """One-shot semantic endpoint; use DenseSearch for repeated queries."""
-    validate_query(query, top_k)
-    if not query.strip():
-        return []
-    return DenseSearch(chunks_dir, cache_dir).search(query, top_k)

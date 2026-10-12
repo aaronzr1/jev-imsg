@@ -2,6 +2,8 @@
 import math
 from pathlib import Path
 
+from imsg.config import positive
+
 
 def add_options(parser, *, modes=True, generation=True):
     if modes:
@@ -14,13 +16,6 @@ def add_options(parser, *, modes=True, generation=True):
     if generation:
         parser.add_argument('--summary-limit', type=positive, help='Generate only the first N chunks for a smoke test')
         parser.add_argument('--force-summaries', action='store_true', help='Regenerate existing summary artifacts')
-
-
-def positive(value):
-    number = int(value)
-    if number < 1:
-        raise ValueError('must be positive')
-    return number
 
 
 def validate_options(mode, weight):

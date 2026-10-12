@@ -1,107 +1,81 @@
 # iMessage search
 
 Search exported conversations with local query planning, dense/BM25 retrieval,
-rank fusion, and Jev verification.
+rank fusion, and Jev verification. The phase 1 checkpoint includes a local web
+interface and optional chunk-summary retrieval.
 
-## Setup and run
+## Run
 
 ```sh
 ./install.sh
-# Put exports in raw/ and set JEV_KEY in .env.
-.venv/bin/python main.py -q 'when did I want to work at a startup' -k 10
-```
-
-The installer sets up uv, a Python virtual environment, Ollama, and the default
-models. After a reboot, start Ollama (`ollama serve`) before searching.
-Planning and embeddings run locally with two CPU threads; Jev receives the query
-and shortlisted conversation text, with up to four concurrent requests.
-
-## Web interface
-
-```sh
+# Put text exports in raw/ and set JEV_KEY in .env.
 .venv/bin/python app.py
 ```
 
-Open http://127.0.0.1:8000, enter a query, and click a result to read the
-conversation. Matching passages are outlined; load earlier or later messages
-to explore the surrounding context. On small screens, use the back arrow to
-return to results. The interface uses system fonts and needs no extra packages
-or frontend build step. Use `--port 8001` if port 8000 is already occupied.
+Open http://127.0.0.1:8000 to search and read conversations around each match.
+The frontend uses system fonts and plain HTML/CSS/JavaScript, with no build step.
+Use `--port 8001` to change the port. After rebooting, start Ollama or run
+`ollama serve` before searching.
 
-The server listens only on your computer and runs `main.py` with its existing
-defaults, one search at a time. Keep Ollama running and JEV_KEY configured as
-above. A single persistent worker shares the loaded corpus, keyword index,
-cached embeddings, and embedding model across queries. The first search loads
-them; subsequent searches reuse them. Changes to chunk files automatically
-rebuild the indices on the next search. Restarting the server resets this cache.
-Reloading the page recovers the most recent search in that tab while the
-server is running. Pipeline outputs and logs are saved in `.cache/web-<id>/`.
-Restarting the server clears the in-memory search; run your query again.
+For the command line:
+
+```sh
+.venv/bin/python main.py -q 'when did I want to work at a startup' -k 10
+.venv/bin/python -m imsg --help
+```
+
+The installer uses uv and a virtual environment. Local models use two CPU
+threads. The web server runs one search at a time, reusing its corpus, indexes,
+and embedding model; Jev verification uses up to four concurrent requests.
+Jev receives the query and shortlisted original conversation text.
+
+## Pipeline and data
+
+`segment → plan → retrieve → fuse → rerank`
 
 Existing chunks in `segments/chunk_data/` are reused. Pass `--resegment` after
-changing exports; use a fresh `--chunks-dir` when removing or replacing a corpus.
-Exports, chunks, credentials, and caches are ignored by Git.
+changing exports; choose a fresh `--chunks-dir` when replacing a corpus. Chunk
+changes refresh the web worker's indexes on the next search.
 
-Each run saves `plan.json`, `retrieve.json`, `fuse.json`, `rerank.json`, and
-`timings.json` under a new `.cache/run-<timestamp>/` directory. Completed stages
-survive later failures. `--out-dir` must name a new directory. Exit codes:
-0 complete, 1 failed, 2 partial reranking results.
+Each CLI run saves stage outputs and `timings.json` under
+`.cache/run-<timestamp>/`. Completed stages survive later failures. `--out-dir`
+must name a new directory. Exit codes are 0 for complete, 1 for failure, and 2
+for partial results. Web outputs and logs are under `.cache/web-<id>/`.
 
-## Debug individual stages
-
-Run from the repository root:
+Use the same CLI for individual stages:
 
 ```sh
-.venv/bin/python -m segments.example
-.venv/bin/python -m chunk_search.example --method sparse
-.venv/bin/python -m agent_query_operator.example
-.venv/bin/python -m jev_reranker.example --input .cache/run-<timestamp>/fuse.json
+.venv/bin/python main.py --stage segment
+.venv/bin/python main.py --stage plan -q 'plans to eat together'
+.venv/bin/python main.py --stage retrieve --plan .cache/run-<id>/plan.json
+.venv/bin/python main.py --stage fuse --input .cache/run-<id>/retrieve.json
+.venv/bin/python main.py --stage rerank --input .cache/run-<id>/fuse.json
 ```
 
-Chunk search supports `--method dense`, `sparse`, or `both` (default).
-The query operator accepts `--plan` to reuse a saved plan.
+Original messages are the default retrieval text. Generate local summaries with
+`--stage summarize`, then select `--retrieval-text summaries` or
+`--retrieval-text both --summary-weight 0.5`. The web interface exposes these
+modes too. See [summary retrieval](docs/summaries.md) for generation and cache
+requirements and [segmentation](docs/segmentation.md) for the chunk schema.
 
-Generated lexical keywords are filtered to words in the original query. If the
-planner supplies only related terms, the query's own distinctive words are used.
-Queries without lexical terms use semantic retrieval alone. Saved plans remain
-strictly validated, including keywords and explicitly named participants.
+Source messages and citations remain authoritative. Retrieval cannot guarantee
+first-ever or last-ever occurrences; provider failures are recorded as errors.
+Restarting the server clears its in-memory search and index cache. Reloading a
+page recovers the latest search in that tab while the server is running.
 
-`main.py --stage` also supports `segment`, `plan`, `retrieve`, `fuse`, and `rerank`.
-Use `--plan <plan.json>` for retrieval, or `--input <retrieve.json|fuse.json>`
-for fusion/reranking. See `main.py --help` for paths, models, aliases, and limits.
+## Repository
 
-## Optional chunk-summary experiment
+- `main.py`, `app.py`: CLI and web launchers.
+- `imsg/config.py`: shared paths, defaults, and argument types.
+- `imsg/cli.py`, `imsg/pipeline.py`, `imsg/server.py`: interfaces and orchestration.
+- `imsg/segments/`: export parsing and segmentation.
+- `imsg/chunk_search/`: corpus loading and dense/BM25 indexes.
+- `imsg/agent_query_operator/`: planning, participant scoping, and rank fusion.
+- `imsg/jev_reranker/`: Jev client and match-probability ranking.
+- `imsg/chunk_summaries/`: optional summary generation, storage, and retrieval.
+- `web/`: frontend assets; `docs/`: references and [phase 2 handoff](docs/phase-2.md).
 
-Original messages are the default retrieval text. Summaries are a separate,
-removable experiment in [chunk_summaries/](chunk_summaries/README.md); they never
-replace source messages or change the chunk schema.
-
-```sh
-# Generate summaries once, locally and sequentially; rerunning resumes the cache.
-.venv/bin/python main.py --stage summarize
-
-# Search summaries, or blend them with message retrieval using weighted ranks.
-.venv/bin/python main.py -q 'when did I want to work at a startup' --retrieval-text summaries
-.venv/bin/python main.py -q 'when did I want to work at a startup' --retrieval-text both --summary-weight 0.5
-
-# Compare all three modes with the same query plan; Jev verification is opt-in.
-.venv/bin/python -m chunk_summaries.compare --cases .cache/summary-cases.json -k 10
-```
-
-The web interface has the same three modes and a summary-weight control.
-Generate summaries before selecting summary retrieval. `--summary-limit 3`
-only generates three chunks for a smoke test; searching the whole corpus still
-requires coverage of all eligible chunks. See the experiment's README for
-small-corpus tests, labeled cases, and clean removal instructions.
-
-## Code
-
-- `segments/`: export parsing and [conversation segmentation](segments/SEGMENTATION.md).
-- `chunk_search/`: dense and BM25 indexes.
-- `agent_query_operator/`: query planning, retrieval, and reciprocal-rank fusion.
-- `jev_reranker/`: Jev client and match-probability ranking.
-- `main.py`: pipeline orchestration and saved stage outputs.
-
-Results retain complete messages and source citations. Retrieval cannot guarantee
-first-ever or last-ever occurrences. Provider failures and oversized candidates
-are reported as errors rather than nonmatches.
+Exports, generated chunks, credentials, model caches, and logs stay local and
+are ignored by Git. Tests, example runners, and development comparison/review
+tools were removed for this checkpoint; their source is preserved in commit
+`6b5b26a`.

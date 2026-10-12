@@ -45,14 +45,14 @@ if ! ready; then
 fi
 
 # Read the pipeline defaults so the installer cannot drift to a different model.
-planner_model="$(.venv/bin/python -c 'from main import DEFAULTS; print(DEFAULTS["planner_model"])')"
+planner_model="$(.venv/bin/python -c 'from imsg.config import DEFAULTS; print(DEFAULTS["planner_model"])')"
 ollama pull "$planner_model"
 
 echo 'Downloading and checking the local embedding model...'
 .venv/bin/python - <<'PY'
-from chunk_search.dense import MODEL
+from imsg.chunk_search.dense import MODEL
 from fastembed import TextEmbedding
-from main import DEFAULTS
+from imsg.config import DEFAULTS
 
 model = TextEmbedding(model_name=MODEL, cache_dir=str(DEFAULTS['cache_dir'] / 'models'), threads=2)
 next(iter(model.embed(['installation check'], batch_size=1)))

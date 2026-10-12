@@ -1,7 +1,7 @@
 # Chunk-summary retrieval experiment
 
-This package owns summary generation, sidecar storage, optional retrieval, and
-comparison tooling. Segmentation and the chunk JSON schema stay unchanged.
+`imsg/chunk_summaries/` owns summary generation, sidecar storage, and optional
+retrieval. Segmentation and the chunk JSON schema stay unchanged.
 DenseSearch/SparseSearch accept a generic text callback; rank fusion accepts
 generic source labels and weights. Neither core component imports this package.
 
@@ -69,57 +69,8 @@ The persistent worker shares records and the embedding model across text views.
 Chunk changes invalidate the corpus snapshot; summary-file changes invalidate
 the summary view. The message view stays warm when switching modes.
 
-## Compare on a few queries
+## Disable
 
-Create an ignored JSON file, for example `.cache/summary-cases.json`:
-
-```json
-[
-  {
-    "query": "when did I want to work at a startup",
-    "relevant_chunk_ids": ["replace-with-an-actual-chunk-id"]
-  },
-  { "query": "making plans to eat together" }
-]
-```
-
-```sh
-.venv/bin/python -m chunk_summaries.compare --cases .cache/summary-cases.json -k 10
-# Optional: evaluate final Jev-filtered/ranked results too (makes API calls).
-.venv/bin/python -m chunk_summaries.compare --cases .cache/summary-cases.json -k 10 --rerank
-```
-
-Each query is planned once and the exact saved plan is reused across messages,
-summaries, and both. A case may supply an inline `plan` with the same `query` to
-skip Ollama planning entirely. Use the same corpus/summaries/model flags as
-generation. `--out-dir` must be a new directory.
-
-The output folder contains `comparison.json`, a checkpoint for each completed
-case, shared plans, and full per-mode stage outputs with original passages.
-The report includes ranked chunk IDs, summaries, stage timings, result-set
-overlap, and (when labeled) recall@k, precision@k, reciprocal rank, and macro
-averages. Precision divides by the requested k; recall divides by the number
-of unique labels. Unlabeled cases have no quality scores, only results/overlap.
-Invalid labels are rejected rather than counted as misses. Partial Jev results
-are explicitly marked incomplete.
-
-For fair quality comparisons, manually label representative queries before
-running, including negation, changing intentions, and speaker/date constraints.
-Overlap alone does not establish which mode is better. Initial per-view timings
-include index construction; `retrieve.json` records individual query-search
-times separately. Keep labels/corpora fixed when sweeping `--summary-weight`.
-No Jev calls occur unless `--rerank` is supplied.
-
-## Disable or remove
-
-For immediate rollback, use `--retrieval-text messages` (the default) or select
-Original messages in the UI. Summary caches are ignored by Git and need no
-migration or restoration of the original corpus.
-
-For source-code removal, delete this package and `tests/test_chunk_summaries.py`,
-remove its defaults/options and the summarize/retrieval hooks in `main.py`, and
-remove mode/weight/summary-display fields from `app.py` and `web/`. The generic
-text callbacks, multiple cached index views, and weighted fusion can remain:
-their default behavior is the original message-only pipeline. Remove the
-summary-setting test from `tests/test_app.py` and this section from the root
-README. There is no dependency, segmentation change, or corpus migration to undo.
+Use `--retrieval-text messages` (the default), or select Original messages in
+the web interface. Summary caches are ignored by Git; disabling the feature
+requires no corpus migration.
