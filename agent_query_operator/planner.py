@@ -12,7 +12,7 @@ def string_list(minimum=0, maximum=12):
 
 SCHEMA = dict(type='object', additionalProperties=False, properties={
     'rewrites': string_list(2, 4),
-    'keywords': string_list(1, 12),
+    'keywords': string_list(0, 12),
     'participants': string_list(0, 8),
     'requirements': string_list(0, 8),
     'answer_mode': dict(type='string', enum=['relevance', 'earliest', 'latest']),
@@ -29,7 +29,8 @@ the distinction between rewrites. Remove retrieval instructions. Keep
 who did what, negations, and the direction of a change. The app also searches the
 original query. Avoid merely substituting synonyms in the same sentence.
 keywords: distinctive words copied literally from the CURRENT query, no synonyms
-or search boilerplate. BM25 matches any word, not phrases or Boolean expressions.
+or search boilerplate. Use [] if none remain. BM25 matches any word, not phrases
+or Boolean expressions.
 participants: names copied literally from the CURRENT query of people spoken TO
 or WITH. A person merely discussed is not a participant. No named recipient means
 []. Never infer the user's name or copy names from instructions/examples.
@@ -71,8 +72,25 @@ def clean_keywords(keywords):
                               if word not in BOILERPLATE))
 
 
+def grounded_keywords(keywords, query):
+    """Normalize generated terms against the query before strict validation.
+
+    Rewrites can explore related language; lexical terms must occur in the query.
+    If the model supplies only synonyms, use the query's own distinctive words.
+    """
+    proposed = clean_keywords(keywords)
+    original = clean_keywords([query])
+    allowed = set(original)
+    grounded = [word for word in proposed if word in allowed]
+    return (grounded or original)[:SCHEMA['properties']['keywords']['maxItems']]
+
+
+class QueryPlanError(ValueError):
+    """The model could not produce a valid plan within the repair budget."""
+
+
 def validate_plan(plan):
-    """Validate saved and generated plans identically; never silently fall back."""
+    """Strictly validate saved plans and normalized model output."""
     if not isinstance(plan, dict) or set(plan) != set(SCHEMA['required']) | {'query'}:
         raise ValueError('plan must contain query and exactly the five schema fields')
     if not isinstance(plan['query'], str) or not plan['query'].strip() or len(plan['query']) > 8000:
@@ -144,11 +162,11 @@ class OllamaPlanner:
                 generated = json.loads(content)
                 if not isinstance(generated, dict) or set(generated) != set(SCHEMA['required']):
                     raise ValueError('response must contain exactly the five schema fields')
-                generated['keywords'] = clean_keywords(generated['keywords'])
+                generated['keywords'] = grounded_keywords(generated['keywords'], query)
                 return validate_plan(dict(query=query, **generated))
             except (ValueError, TypeError) as exc:
                 if attempt:
-                    raise ValueError(f'Invalid query plan after one repair attempt: {exc}') from exc
+                    raise QueryPlanError(f'Invalid query plan after one repair attempt: {exc}') from exc
                 messages.append(dict(role='user', content=f'Previous output was invalid: {exc}. '
                                      'Regenerate the complete plan for the original query.'))
         raise AssertionError('unreachable')

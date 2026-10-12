@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Message search</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <div class="wordmark"><span class="brand-icon" aria-hidden="true">···</span> messages <span class="wordmark-slash">/</span> search</div>
+      <span class="local-label"><span class="dot"></span> local archive</span>
+    </header>
+    <section class="intro" aria-labelledby="heading">
+      <h1 id="heading">Somewhere in the conversation.</h1>
+      <p>Find a thought, a moment, or something you almost forgot.</p>
+    </section>
+    <form id="search-form" role="search">
+      <label class="sr-only" for="query">Search your messages</label>
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="query" name="query" placeholder="What are you looking for?" maxlength="2000" required autocomplete="off">
+      <button id="search-button" type="submit">Search <span aria-hidden="true">↗</span></button>
+    </form>
+    <div class="retrieval-options">
+      <label for="retrieval-text">Search in</label>
+      <select id="retrieval-text"><option value="messages">Original messages</option><option value="summaries">Chunk summaries</option><option value="both">Messages + summaries</option></select>
+      <label id="weight-control" hidden>Summary weight <input id="summary-weight" type="number" min="0" max="1" step="0.1" value="0.5"></label>
+    </div>
+    <div class="search-meta"><p id="status" role="status" aria-live="polite">Search in your own words.</p><span id="elapsed"></span></div>
+    <div id="error" class="notice error" role="alert" hidden></div>
+    <details id="warnings" class="notice" hidden><summary>Search notes</summary><ul id="warning-list"></ul></details>
+    <section class="workspace" aria-label="Search results and conversation">
+      <aside class="results-pane" aria-label="Search results">
+        <div class="panel-heading"><h2>Results</h2><span id="result-count">—</span></div>
+        <div id="results" class="results-list">
+          <div class="list-empty"><span aria-hidden="true">⌕</span><p>A little digging.<br>A familiar conversation.</p></div>
+        </div>
+      </aside>
+      <section class="conversation-pane" aria-label="Conversation context">
+        <div id="conversation-empty" class="conversation-empty"><span class="empty-bubbles" aria-hidden="true">···</span><h2>Pick up the thread.</h2><p>Select a result to read the conversation<br>and explore what came before and after.</p></div>
+        <div id="conversation" hidden>
+          <header class="conversation-header"><button id="back" class="text-button" type="button" aria-label="Back to results">‹</button><div class="avatar" id="avatar" aria-hidden="true"></div><div class="conversation-heading"><h2 id="conversation-title"></h2><p id="conversation-source"></p></div><button id="jump" class="text-button" type="button">Jump to match ↓</button></header>
+          <details id="chunk-summary" class="chunk-summary" hidden><summary>Generated chunk summary</summary><p id="chunk-summary-text"></p></details>
+          <div id="messages-scroll" tabindex="0" aria-label="Scrollable conversation">
+            <button id="earlier" class="context-button" type="button">Load earlier messages ↑</button>
+            <div id="messages"></div>
+            <button id="later" class="context-button" type="button">Load later messages ↓</button>
+          </div>
+          <footer class="conversation-footer"><span id="context-count"></span><span><i class="match-key"></i> matching passage</span></footer>
+        </div>
+      </section>
+    </section>
+    <footer class="page-footer"><span>An old conversation. A new way to find it.</span><span>iMessage archive</span></footer>
+  </main>
+</body>
+</html>

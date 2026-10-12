@@ -49,7 +49,8 @@ def retrieve(plan, dense, sparse, per_query=20, aliases=None):
     allowed, unresolved = resolve_participants(plan, sparse.records, aliases)
     runs = []
     queries = [('dense', plan['query'])] + [('dense', q) for q in plan['rewrites']]
-    queries.append(('sparse', ' '.join(plan['keywords'])))
+    if plan['keywords']:
+        queries.append(('sparse', ' '.join(plan['keywords'])))
     for number, (method, query) in enumerate(queries, 1):
         index = dense if method == 'dense' else sparse
         started = time.perf_counter()

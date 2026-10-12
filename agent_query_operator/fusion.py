@@ -16,7 +16,16 @@ def fuse(runs, top_k=10, rrf_k=60):
         query = run.get('query')
         if not isinstance(query, str) or not query.strip() or not isinstance(run.get('results'), list):
             raise ValueError('each run needs a nonblank query and results list')
-        query_key = (run['method'], ' '.join(query.casefold().split()))
+        text_source = run.get('text_source', 'messages')
+        weight = run.get('weight', 1.0)
+        if not isinstance(text_source, str) or not text_source.strip():
+            raise ValueError('text_source must be a nonblank string')
+        if (isinstance(weight, bool) or not isinstance(weight, (int, float)) or
+                not math.isfinite(weight) or weight < 0):
+            raise ValueError('run weight must be a finite nonnegative number')
+        if weight == 0:
+            continue
+        query_key = (text_source, run['method'], ' '.join(query.casefold().split()))
         if query_key in seen_queries:
             continue
         seen_queries.add(query_key)
@@ -46,10 +55,18 @@ def fuse(runs, top_k=10, rrf_k=60):
             candidate = merged[chunk_id]
             if any(candidate[key] != hit[key] for key in ('source_file', 'source_sha256', 'chunk')):
                 raise ValueError(f'Conflicting corpus versions or ID collision for {chunk_id}')
-            contribution = 1.0 / (rrf_k + rank)
+            if 'summary' in hit:
+                if not isinstance(hit['summary'], str) or not hit['summary'].strip():
+                    raise ValueError('summary must be nonblank text')
+                if 'summary' in candidate and candidate['summary'] != hit['summary']:
+                    raise ValueError(f'Conflicting summaries for {chunk_id}')
+                candidate['summary'] = hit['summary']
+            contribution = weight / (rrf_k + rank)
             candidate['rrf_score'] += contribution
             candidate['contributions'].append(dict(run_id=run.get('run_id', f'run-{index + 1}'),
                 method=run['method'], query=query, rank=rank, score=score, contribution=contribution))
+            if 'text_source' in run or 'weight' in run:
+                candidate['contributions'][-1].update(text_source=text_source, weight=weight)
     # Stable explicit tie-break, independent of input list ordering.
     ranked = sorted(merged.values(), key=lambda hit: (-hit['rrf_score'], hit['chunk_id']))
     return ranked[:top_k]

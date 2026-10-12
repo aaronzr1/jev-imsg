@@ -14,12 +14,13 @@ def tokenize(text):
 class SparseSearch:
     """Load once, then call search repeatedly. Rebuild to pick up changed files."""
 
-    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR):
-        self.records = load_chunks(chunks_dir)
+    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, records=None, text=None):
+        self.records = load_chunks(chunks_dir) if records is None else records
+        self.text = text if text is not None else chunk_text
         self.postings = defaultdict(list)
         self.lengths = []
         for index, record in enumerate(self.records):
-            terms = tokenize(chunk_text(record))
+            terms = tokenize(self.text(record))
             self.lengths.append(len(terms))
             for term, frequency in Counter(terms).items():
                 self.postings[term].append((index, frequency))

@@ -32,14 +32,16 @@ def normalize(vectors):
 class DenseSearch:
     """Snapshot of chunks with cached embeddings and lazy model loading."""
 
-    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, cache_dir=DEFAULT_CACHE_DIR, use_cache=True):
-        self.records = load_chunks(chunks_dir)
+    def __init__(self, chunks_dir=DEFAULT_CHUNKS_DIR, cache_dir=DEFAULT_CACHE_DIR, use_cache=True,
+                 records=None, text=None, model=None):
+        self.records = load_chunks(chunks_dir) if records is None else records
         self.cache_dir = Path(cache_dir)
-        self.model = None
+        self.model = model
+        self.text = text if text is not None else chunk_text
         texts, owners = [], []
         for index, record in enumerate(self.records):
-            for text in windows(chunk_text(record, semantic=True)):
-                texts.append(text)
+            for window in windows(self.text(record, semantic=True)):
+                texts.append(window)
                 owners.append(index)
         self.owners = np.asarray(owners, dtype=np.int64)
         self.vectors = None
