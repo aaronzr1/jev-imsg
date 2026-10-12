@@ -1,6 +1,6 @@
 # Chunk-summary retrieval experiment
 
-`imsg/chunk_summaries/` owns summary generation, sidecar storage, and optional
+`imsg/intent_search/chunk_summaries/` owns summary generation, sidecar storage, and optional
 retrieval. Segmentation and the chunk JSON schema stay unchanged.
 DenseSearch/SparseSearch accept a generic text callback; rank fusion accepts
 generic source labels and weights. Neither core component imports this package.

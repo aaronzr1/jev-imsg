@@ -1,5 +1,5 @@
 """The optional feature's single retrieval hook into the ordinary pipeline."""
-from imsg.agent_query_operator.search import retrieve
+from imsg.intent_search.agent_query_operator.search import retrieve
 
 from .options import validate_options
 from .store import SummaryStore

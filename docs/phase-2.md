@@ -5,7 +5,10 @@ tagged `phase-1-checkpoint`. No phase 2 feature scope has been selected yet.
 
 ## Starting point
 
-The CLI and local web interface share `imsg.pipeline.run`. A single web worker
+The CLI, standalone API, and local web interface share
+`imsg.intent_search.pipeline.run` (`imsg.pipeline` remains a compatibility import).
+The [intent-search package and endpoint](intent-search.md) separate search from
+browser presentation. A single service worker
 owns `SearchIndexes`, which reuses the corpus and embedding model across message
 and summary views. File signatures invalidate stale views. Saved stage outputs
 make failures inspectable without rerunning completed stages.
@@ -22,8 +25,10 @@ optional and defaults off.
 
 ## Working boundaries
 
-- Keep shared defaults in `imsg/config.py` and orchestration in `imsg/pipeline.py`.
-- Keep interfaces in `imsg/cli.py`, `imsg/server.py`, and `web/`.
+- Keep shared defaults in `imsg/config.py` and orchestration in
+  `imsg/intent_search/pipeline.py`.
+- Keep the search CLI, API, and job service in `imsg/intent_search/`; browser
+  presentation stays in `imsg/server.py` and `web/`.
 - Keep retrieval and verification components independent of interface code.
 - Preserve schema-version-1 chunks, source hashes, message IDs, and line citations
   unless phase 2 explicitly requires a migration.
@@ -62,6 +67,7 @@ root `.env`. Verification did not make model or Jev API calls.
 ```sh
 .venv/bin/python -m imsg --help
 .venv/bin/python app.py --help
+.venv/bin/python -m imsg.intent_search --help
 .venv/bin/python -m imsg.segments.segment --help
 bash -n install.sh
 git status --short

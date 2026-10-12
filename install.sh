@@ -50,7 +50,7 @@ ollama pull "$planner_model"
 
 echo 'Downloading and checking the local embedding model...'
 .venv/bin/python - <<'PY'
-from imsg.chunk_search.dense import MODEL
+from imsg.intent_search.chunk_search.dense import MODEL
 from fastembed import TextEmbedding
 from imsg.config import DEFAULTS
 

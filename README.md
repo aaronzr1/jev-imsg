@@ -17,6 +17,17 @@ The frontend uses system fonts and plain HTML/CSS/JavaScript, with no build step
 Use `--port 8001` to change the port. After rebooting, start Ollama or run
 `ollama serve` before searching.
 
+For the standalone intent-search API (default port 8001):
+
+```sh
+.venv/bin/python -m imsg.intent_search --port 8001
+```
+
+Submit a query, then poll the returned `status_url` for the full pipeline
+output, including the plan, verified matches, original messages, citations,
+provider failures, and timings. The same endpoint is also available on the
+web server. See [the API contract and integration examples](docs/intent-search.md).
+
 For the command line:
 
 ```sh
@@ -40,7 +51,8 @@ changes refresh the web worker's indexes on the next search.
 Each CLI run saves stage outputs and `timings.json` under
 `.cache/run-<timestamp>/`. Completed stages survive later failures. `--out-dir`
 must name a new directory. Exit codes are 0 for complete, 1 for failure, and 2
-for partial results. Web outputs and logs are under `.cache/web-<id>/`.
+for partial results. API and web outputs and logs are under
+`.cache/intent-search-<id>/`.
 
 Use the same CLI for individual stages:
 
@@ -60,19 +72,23 @@ requirements and [segmentation](docs/segmentation.md) for the chunk schema.
 
 Source messages and citations remain authoritative. Retrieval cannot guarantee
 first-ever or last-ever occurrences; provider failures are recorded as errors.
-Restarting the server clears its in-memory search and index cache. Reloading a
+Restarting the server clears its in-memory jobs and index cache. Each service
+retains its latest 16 jobs. Reloading a
 page recovers the latest search in that tab while the server is running.
 
 ## Repository
 
 - `main.py`, `app.py`: CLI and web launchers.
 - `imsg/config.py`: shared paths, defaults, and argument types.
-- `imsg/cli.py`, `imsg/pipeline.py`, `imsg/server.py`: interfaces and orchestration.
+- `imsg/intent_search/`: reusable end-to-end search package, CLI, job service,
+  and standalone HTTP API.
+- `imsg/cli.py`, `imsg/pipeline.py`: compatibility entry points.
+- `imsg/server.py`: browser assets, result previews, and conversation context.
 - `imsg/segments/`: export parsing and segmentation.
-- `imsg/chunk_search/`: corpus loading and dense/BM25 indexes.
-- `imsg/agent_query_operator/`: planning, participant scoping, and rank fusion.
-- `imsg/jev_reranker/`: Jev client and match-probability ranking.
-- `imsg/chunk_summaries/`: optional summary generation, storage, and retrieval.
+- `imsg/intent_search/chunk_search/`: corpus loading and dense/BM25 indexes.
+- `imsg/intent_search/agent_query_operator/`: planning, participant scoping, and rank fusion.
+- `imsg/intent_search/jev_reranker/`: Jev client and match-probability ranking.
+- `imsg/intent_search/chunk_summaries/`: optional summary generation, storage, and retrieval.
 - `web/`: frontend assets; `docs/`: references and [phase 2 handoff](docs/phase-2.md).
 
 Exports, generated chunks, credentials, model caches, and logs stay local and
