@@ -1,5 +1,7 @@
 # iMessage search
 
+<img width="1089" height="756" alt="Image" src="https://github.com/user-attachments/assets/03e9983f-f519-49bd-b9fd-7106e6442432" />
+
 Semantic search over exported iMessage conversations with a Jev reranker.
 Local Ollama query planning → MiniLM/BM25 search → rank fusion → Jev ranking.
 Browse matches with their original messages and surrounding conversation.
