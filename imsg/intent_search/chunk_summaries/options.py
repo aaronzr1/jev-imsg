@@ -1,4 +1,4 @@
-"""Shared CLI switches for the optional summary experiment."""
+"""CLI options for summary generation and search."""
 import math
 from pathlib import Path
 
@@ -14,7 +14,7 @@ def add_options(parser, *, modes=True, generation=True):
     parser.add_argument('--summary-url')
     parser.add_argument('--summary-timeout', type=float)
     if generation:
-        parser.add_argument('--summary-limit', type=positive, help='Generate only the first N chunks for a smoke test')
+        parser.add_argument('--summary-limit', type=positive, help='Generate summaries for only the first N chunks')
         parser.add_argument('--force-summaries', action='store_true', help='Regenerate existing summary artifacts')
 
 

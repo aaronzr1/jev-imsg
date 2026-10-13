@@ -1,4 +1,4 @@
-"""The optional feature's single retrieval hook into the ordinary pipeline."""
+"""Search summaries, optionally combined with original messages."""
 from imsg.intent_search.agent_query_operator.search import retrieve
 
 from .options import validate_options
@@ -29,7 +29,7 @@ def retrieve_with_summaries(plan, args, indexes, aliases=None):
         warnings.extend(bundle['warnings'])
         scope = bundle['scope']
     if weight:
-        warnings.append('Summaries are generated retrieval hints. Verify matches against the original messages.')
+        warnings.append('Generated summaries may omit or misread details. Check the original messages.')
     return dict(plan=plan, runs=runs, warnings=list(dict.fromkeys(warnings)), scope=scope,
                 settings=dict(retrieval_text=args.retrieval_text, summary_weight=weight,
                               summary_model=args.summary_model if weight else None))

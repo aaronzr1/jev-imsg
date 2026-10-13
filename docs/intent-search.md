@@ -1,9 +1,8 @@
 # Intent-search service
 
-`imsg/intent_search/` owns the full search flow: planning, dense/BM25 retrieval,
-rank fusion, Jev verification, optional summaries, saved outputs, and reusable
-indexes. Segmentation remains in `imsg/segments/`; paths and defaults remain in
-`imsg/config.py`. Existing exports, chunks, caches, and root `.env` are reused.
+The HTTP API and Python service run the same search as the web interface:
+query planning, MiniLM/BM25 retrieval, rank fusion, and Jev reranking.
+Paths and defaults are defined in `imsg/config.py`.
 
 ## Start and call the API
 
@@ -57,7 +56,7 @@ body must use `application/json` and be no larger than 8,192 bytes.
 - `schema_version`, `id`, `query`, `status`, and the request's retrieval settings.
 - `completed_stages`: saved stages among `segment`, `plan`, `retrieve`, `fuse`,
   and `rerank`. Existing chunks usually skip `segment`.
-- On `done`, `output`: the full existing pipeline result, including `plan`,
+- On `done`, `output`: the search result, including `plan`,
   `scope`, `results`, `decisions`, `counts`, `warnings`, `complete`, verification
   settings, and retrieval settings. Matches retain `chunk_id`, source hashes,
   original structured messages with source line ranges, and match probabilities.
@@ -66,8 +65,8 @@ body must use `application/json` and be no larger than 8,192 bytes.
 
 `status: done` means the pipeline finished. Check `output.complete` separately:
 provider failures can yield partial results with `complete: false` and failed
-candidate decisions. The service preserves the existing search semantics;
-earliest/latest queries still cannot establish corpus-wide first/last occurrences.
+candidate decisions. Search cannot confirm the first or last occurrence in the
+archive.
 
 `GET /api/intent-search/config` returns the default retrieval mode, summary
 weight, and candidate limit. `GET /api/health` reports that the HTTP service is
@@ -78,8 +77,8 @@ retained in memory until restart or until displaced by the latest 16 jobs.
 Unknown/expired IDs return HTTP 404. A closing service rejects submissions with
 HTTP 503. Outputs and logs stay in `.cache/intent-search-<job-id>/`, even after
 in-memory expiration. Each worker reuses its corpus and embedding model, with
-file signatures refreshing changed indexes. Existing local-host/origin checks
-apply; command-line and backend clients can call it without an Origin header.
+changed files triggering an index refresh. Requests must use a local Host and,
+if supplied, a local Origin header. Command-line clients can omit Origin.
 
 ## Python integration
 
@@ -108,11 +107,19 @@ finally:
 
 Reuse one service instance across queries to keep indexes warm. Server settings
 can be passed to `IntentSearchService(settings={...})`, with filesystem settings
-as `pathlib.Path` values. `imsg.intent_search.pipeline.run` remains the direct
-stage runner used by the CLI. `main.py`, `python -m imsg`, and the compatibility
-imports in `imsg.pipeline` continue to work. Search component imports now live
-under `imsg.intent_search`.
+as `pathlib.Path` values. `imsg.intent_search.pipeline.run` runs individual
+stages and is used by `main.py` and `python -m imsg`.
 
-The browser's existing `/api/search` routes retain their preview/context format
-and use this same service. New integrations should use `/api/intent-search` to
-receive the full pipeline output.
+The browser uses `/api/search` for previews and conversation context.
+Use `/api/intent-search` for the full search output.
+
+## CLI outputs
+
+Each CLI run saves stage results and `timings.json` in `.cache/run-<timestamp>/`.
+`--out-dir` must name a new directory. Completed stages are saved even if a later
+stage fails. Exit codes: 0 complete, 1 failed, 2 partial results.
+
+Use `--stage plan`, `retrieve`, `fuse`, or `rerank` to run one stage.
+`--plan <plan.json>` reuses a saved plan; `--input <results.json>` supplies
+retrieval results for `fuse` or fused results for `rerank`. Run
+`.venv/bin/python main.py --help` for all options.

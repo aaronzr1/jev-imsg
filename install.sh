@@ -58,6 +58,6 @@ model = TextEmbedding(model_name=MODEL, cache_dir=str(DEFAULTS['cache_dir'] / 'm
 next(iter(model.embed(['installation check'], batch_size=1)))
 PY
 
-echo 'Installed. Put exports in raw/ and set JEV_KEY in .env or your environment.'
-echo 'Run: .venv/bin/python main.py'
+echo 'Installed. Put .txt exports from imessage-exporter in raw/ and set JEV_KEY in .env.'
+echo 'Run: .venv/bin/python app.py'
 echo 'After a reboot, start Ollama or run ollama serve before searching.'

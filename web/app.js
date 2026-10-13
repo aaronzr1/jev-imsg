@@ -30,7 +30,7 @@ function clearConversation() {
   state.context = null;
   $('conversation').hidden = true;
   $('conversation-empty').hidden = false;
-  $('conversation-empty').querySelector('h2').textContent = 'Pick up the thread.';
+  $('conversation-empty').querySelector('h2').textContent = 'Select a result.';
   document.querySelector('.workspace').classList.remove('reading');
 }
 
@@ -91,7 +91,7 @@ async function search(query, existingJob = null) {
       if (result.status === 'done') {
         state.results = result.results;
         renderResults();
-        $('status').textContent = `${result.results.length} matching conversation${result.results.length === 1 ? '' : 's'}${result.complete ? '' : ' · Some candidates could not be checked'}`;
+        $('status').textContent = `${result.results.length} matching conversation${result.results.length === 1 ? '' : 's'}${result.complete ? '' : ' · Some passages could not be checked'}`;
         $('warning-list').replaceChildren(...result.warnings.map((text) => element('li', '', text)));
         $('warnings').hidden = !result.warnings.length;
         break;
@@ -181,7 +181,7 @@ async function openResult(index) {
   } catch (error) {
     if (version === state.version) showError(error.message);
   } finally {
-    if (version === state.version) $('conversation-empty').querySelector('h2').textContent = 'Pick up the thread.';
+    if (version === state.version) $('conversation-empty').querySelector('h2').textContent = 'Select a result.';
   }
 }
 

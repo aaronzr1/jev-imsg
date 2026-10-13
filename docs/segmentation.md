@@ -8,6 +8,11 @@ MiniLM embeddings (two CPU threads). Raw exports remain untouched.
 .venv/bin/python -m imsg.segments.segment --help
 ```
 
+Chunks are reused until rebuilt. Run the segment command again after updating
+exports. When removing or replacing conversations, clear `segments/chunk_data/`
+first; rebuilding does not delete old chunk files. CLI searches can use a separate
+directory with `--chunks-dir`.
+
 ## Boundaries
 
 Messages form bursts of up to eight messages, with word and time limits.
@@ -34,7 +39,7 @@ Tune similarity with `--similarity`, `--resume-similarity`, and
 
 Files are written under `segments/chunk_data/` by default:
 
-- `<conversation>.chunks.json`: authoritative schema-version-1 document with
+- `<conversation>.chunks.json`: schema-version-1 document with
   source metadata, eligibility, statistics, and chunks. Skipped documents store
   their messages at the top level with an empty chunks array.
 - `index.json`: per-file metadata and output filenames.
@@ -49,4 +54,4 @@ stable for unchanged exports; chunk IDs can change with segmentation settings.
 
 Indented reply copies are resolved against timeline messages when unambiguous;
 identical top-level messages and unresolved copies are preserved. Source filenames,
-SHA-256 hashes, and line ranges retain provenance.
+SHA-256 hashes, and line ranges identify the source of each message.

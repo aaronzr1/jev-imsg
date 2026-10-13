@@ -54,8 +54,7 @@ def retrieve(plan, dense, sparse, per_query=20, aliases=None):
     for number, (method, query) in enumerate(queries, 1):
         index = dense if method == 'dense' else sparse
         started = time.perf_counter()
-        # Existing indexes don't accept filters. Rank the complete snapshot when
-        # scoped, then filter BEFORE truncating so other threads cannot crowd it out.
+        # Filter by participant before truncating so other chats cannot crowd out matches.
         if allowed == set():
             hits = []
         else:
@@ -66,11 +65,11 @@ def retrieve(plan, dense, sparse, per_query=20, aliases=None):
             hits = hits[:per_query]
         runs.append(dict(run_id=f'{method}-{number}', method=method, query=query,
                          seconds=round(time.perf_counter() - started, 4), results=hits))
-    warnings = ['RRF ranks candidates; relevance and answer requirements remain unverified.']
+    warnings = ['Search may miss relevant conversations.']
     if unresolved:
-        warnings.append('Unresolved participants (not filtered): ' + ', '.join(unresolved))
+        warnings.append('Could not match these names to senders; search was not limited by them: ' + ', '.join(unresolved))
     if plan['answer_mode'] != 'relevance':
-        warnings.append('Bounded retrieval cannot establish the first/last occurrence in the corpus.')
+        warnings.append('Search cannot confirm the first or last occurrence in your archive.')
     return dict(plan=plan, runs=runs, warnings=warnings,
                 scope=dict(source_files=None if allowed is None else sorted(allowed),
                            unresolved_participants=unresolved))

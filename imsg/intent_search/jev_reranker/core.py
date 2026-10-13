@@ -106,10 +106,10 @@ def rerank(bundle, judge, threshold=0.5, progress=None):
     for rank, result in enumerate(results, 1):
         result['rank'] = rank
     warnings = list(warnings)
-    warnings.append('Jev probabilities are model judgments; source metadata does not verify semantic correctness.')
+    warnings.append('Match scores are Jev estimates and can be wrong.')
     if plan.get('answer_mode', 'relevance') != 'relevance':
-        warnings.append('Results are ranked by match probability. First/last occurrence is not established: '
-                        'chunk start times are not matching-message times, and retrieval is bounded.')
+        warnings.append('Results are sorted by match score. Dates mark the start of each passage, '
+                        'not necessarily the matching message.')
     counts = {s: sum(d['status'] == s for d in decisions) for s in STATUSES}
     output = dict(schema_version=1, query=plan['query'], plan=deepcopy(plan),
                 scope=deepcopy(scope), complete=counts['error'] == 0,

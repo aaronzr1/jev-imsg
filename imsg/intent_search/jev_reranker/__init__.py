@@ -1,4 +1,4 @@
-"""Public handoff: rerank(operator_bundle, JevJudge(load_key()))."""
+"""Rank candidate conversations with Jev."""
 from .client import JevJudge, load_key
 from .core import rerank
 

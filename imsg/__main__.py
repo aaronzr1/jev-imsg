@@ -1,4 +1,4 @@
 """Run with python -m imsg."""
-from .cli import main
+from .intent_search.cli import main
 
 raise SystemExit(main())

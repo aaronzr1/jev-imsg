@@ -1,5 +1,5 @@
 """Launch the message-search command line."""
-from imsg.cli import main
+from imsg.intent_search.cli import main
 
 
 if __name__ == '__main__':
